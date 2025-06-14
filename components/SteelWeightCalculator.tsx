@@ -146,7 +146,7 @@ const SteelWeightCalculator = () => {
         </div>
 
         {/* Controles principales */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
           <button 
             onClick={addElement}
             className="inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
@@ -173,10 +173,11 @@ const SteelWeightCalculator = () => {
         {/* Lista de elementos */}
         <div className="space-y-4 mb-8">
           {elements.map((element) => (
-            <div key={element.id} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-              <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
+            <div key={element.id} className="bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
                 
-                <div className="col-span-2 md:col-span-1">
+                <div className="sm:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                   <select
                     value={element.profileType}
                     onChange={(e) => {
@@ -193,7 +194,8 @@ const SteelWeightCalculator = () => {
                   </select>
                 </div>
 
-                <div className="col-span-2 md:col-span-1">
+                <div className="sm:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
                   <select
                     value={element.size}
                     onChange={(e) => updateElement(element.id, 'size', e.target.value)}
@@ -206,6 +208,7 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
                   <input
                     type="text"
                     value={element.brand}
@@ -216,6 +219,7 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -231,6 +235,7 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -245,12 +250,13 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Peso</label>
                   <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-center font-medium text-gray-900">
                     {element.weight.toFixed(1)} kg
                   </div>
                 </div>
 
-                <div className="flex justify-center">
+                <div className="flex justify-center items-end">
                   <button
                     onClick={() => removeElement(element.id)}
                     className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
