@@ -16,8 +16,6 @@ interface Element {
 const SteelWeightCalculator = () => {
   const [elements, setElements] = useState<Element[]>([]);
   const [totalWeight, setTotalWeight] = useState(0);
-  const [totalCost, setTotalCost] = useState(0);
-  const [steelPrice, setSteelPrice] = useState(28);
 
   // Base de datos de perfiles estándar mexicanos (kg/m)
   const profiles: Record<string, Record<string, number>> = {
@@ -41,13 +39,74 @@ const SteelWeightCalculator = () => {
       '305x305': 137.00
     },
     'Ángulo': {
-      '25x25x3': 1.12,
-      '38x38x5': 2.77,
-      '51x51x6': 4.47,
-      '64x64x6': 7.09,
-      '76x76x8': 11.40,
-      '102x102x10': 19.30,
-      '127x127x13': 30.60
+      '3/4 x 1/8 (19x3mm)': 0.88,
+      '3/4 x 3/16 (19x5mm)': 1.25,
+      '1 x 1/8 (25x3mm)': 1.19,
+      '1 x 3/16 (25x6mm)': 1.73,
+      '1 x 1/4 (25x6mm)': 2.32,
+      '1 1/4 x 1/8 (32x3mm)': 1.5,
+      '1 1/4 x 3/16 (32x5mm)': 2.2,
+      '1 1/4 x 1/4 (32x6mm)': 2.86,
+      '1 1/2 x 1/8 (38x3mm)': 1.83,
+      '1 1/2 x 3/16 (38x5mm)': 2.68,
+      '1 1/2 x 1/4 (38x6mm)': 3.48,
+      '1 1/2 x 5/16 (38x8mm)': 4.26,
+      '1 1/2 x 3/8 (38x10mm)': 4.99,
+      '1 3/4 x 1/8 (44x3mm)': 2.14,
+      '1 3/4 x 3/16 (44x5mm)': 3.15,
+      '1 3/4 x 1/4 (44x6mm)': 4.12,
+      '1 3/4 x 5/16 (44x8mm)': 5.04,
+      '2 x 1/8 (51x3mm)': 2.46,
+      '2 x 3/16 (51x5mm)': 3.63,
+      '2 x 1/4 (51x6mm)': 4.75,
+      '2 x 5/16 (51x8mm)': 5.83,
+      '2 x 3/8 (51x10mm)': 7.0,
+      '2 1/2 x 3/16 (64x5mm)': 4.57,
+      '2 1/2 x 1/4 (64x6mm)': 6.1,
+      '2 1/2 x 5/16 (64x8mm)': 7.44,
+      '2 1/2 x 3/8 (64x10mm)': 8.78,
+      '2 1/2 x 1/2 (64x13mm)': 11.46,
+      '3 x 3/16 (76x5mm)': 5.52,
+      '3 x 1/4 (76x6mm)': 7.3,
+      '3 x 5/16 (76x8mm)': 9.08,
+      '3 x 3/8 (76x10mm)': 10.72,
+      '3 x 7/16 (76x11mm)': 12.35,
+      '3 x 1/2 (76x13mm)': 13.99,
+      '3 1/2 x 1/4 (89x6mm)': 8.63,
+      '3 1/2 x 5/16 (89x8mm)': 10.72,
+      '3 1/2 x 3/8 (89x10mm)': 12.65,
+      '3 1/2 x 7/16 (89x11mm)': 14.59,
+      '3 1/2 x 1/2 (89x13mm)': 16.52,
+      '4 x 1/4 (102x6mm)': 9.82,
+      '4 x 5/16 (102x8mm)': 12.2,
+      '4 x 3/8 (102x10mm)': 14.59,
+      '4 x 7/16 (102x11mm)': 16.82,
+      '4 x 1/2 (102x13mm)': 19.05,
+      '4 x 5/8 (102x16mm)': 23.37,
+      '4 x 3/4 (102x19mm)': 27.54,
+      '5 x 5/16 (127x8mm)': 15.33,
+      '5 x 3/8 (127x10mm)': 18.31,
+      '5 x 7/16 (127x11mm)': 21.29,
+      '5 x 1/2 (127x13mm)': 24.11,
+      '5 x 5/8 (127x16mm)': 29.77,
+      '5 x 3/4 (127x19mm)': 35.13,
+      '5 x 7/8 (127x22mm)': 40.49,
+      '6 x 5/16 (152x8mm)': 18.46,
+      '6 x 3/8 (152x10mm)': 22.18,
+      '6 x 7/16 (152x11mm)': 25.6,
+      '6 x 1/2 (152x13mm)': 29.17,
+      '6 x 9/16 (152x14mm)': 32.6,
+      '6 x 5/8 (152x16mm)': 36.02,
+      '6 x 3/4 (152x19mm)': 42.72,
+      '6 x 7/8 (152x22mm)': 49.27,
+      '6 x 1 (152x25mm)': 55.67,
+      '8 x 1/2 (203x13mm)': 39.3,
+      '8 x 9/16 (203x14mm)': 44.06,
+      '8 x 5/8 (203x16mm)': 48.67,
+      '8 x 3/4 (203x19mm)': 57.9,
+      '8 x 7/8 (203x22mm)': 66.98,
+      '8 x 1 (203x25mm)': 75.91,
+      '8 x 1 1/8 (203x29mm)': 84.7
     },
     'Canal': {
       '76x38': 5.90,
@@ -81,11 +140,11 @@ const SteelWeightCalculator = () => {
   const addElement = () => {
     const newElement: Element = {
       id: Date.now(),
-      profileType: 'IPR',
-      size: '100x50',
+      profileType: 'Ángulo',
+      size: '3/4 x 1/8 (19x3mm)',
       length: 1,
       quantity: 1,
-      weight: 9.65,
+      weight: 0.88,
       brand: ''
     };
     setElements([...elements, newElement]);
@@ -110,8 +169,7 @@ const SteelWeightCalculator = () => {
   useEffect(() => {
     const total = elements.reduce((sum, element) => sum + element.weight, 0);
     setTotalWeight(total);
-    setTotalCost(total * steelPrice);
-  }, [elements, steelPrice]);
+  }, [elements]);
 
   const generateReport = () => {
     let report = "REPORTE ESTRUCTURA METÁLICA\n\n";
@@ -121,7 +179,6 @@ const SteelWeightCalculator = () => {
     });
     
     report += `\nTOTAL: ${totalWeight.toFixed(1)} kg\n`;
-    report += `COSTO: $${totalCost.toLocaleString('es-MX')}\n`;
     
     const blob = new Blob([report], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -146,7 +203,7 @@ const SteelWeightCalculator = () => {
         </div>
 
         {/* Controles principales */}
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+        <div className="flex items-center justify-between mb-8">
           <button 
             onClick={addElement}
             className="inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
@@ -154,30 +211,15 @@ const SteelWeightCalculator = () => {
             <Plus className="w-5 h-5 mr-2" />
             Agregar elemento
           </button>
-          
-          <div className="flex items-center space-x-3">
-            <span className="text-sm text-gray-600">Precio/kg:</span>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-              <input
-                type="number"
-                value={steelPrice}
-                onChange={(e) => setSteelPrice(parseFloat(e.target.value) || 0)}
-                className="w-20 pl-6 pr-3 py-2 border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                step="0.1"
-              />
-            </div>
-          </div>
         </div>
 
         {/* Lista de elementos */}
         <div className="space-y-4 mb-8">
           {elements.map((element) => (
-            <div key={element.id} className="bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-100">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+            <div key={element.id} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+              <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
                 
-                <div className="sm:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                <div className="col-span-2 md:col-span-1">
                   <select
                     value={element.profileType}
                     onChange={(e) => {
@@ -194,8 +236,7 @@ const SteelWeightCalculator = () => {
                   </select>
                 </div>
 
-                <div className="sm:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
+                <div className="col-span-2 md:col-span-1">
                   <select
                     value={element.size}
                     onChange={(e) => updateElement(element.id, 'size', e.target.value)}
@@ -208,7 +249,6 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
                   <input
                     type="text"
                     value={element.brand}
@@ -219,7 +259,6 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -235,7 +274,6 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -250,13 +288,12 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Peso</label>
                   <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-center font-medium text-gray-900">
                     {element.weight.toFixed(1)} kg
                   </div>
                 </div>
 
-                <div className="flex justify-center items-end">
+                <div className="flex justify-center">
                   <button
                     onClick={() => removeElement(element.id)}
                     className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -272,7 +309,7 @@ const SteelWeightCalculator = () => {
         {/* Resultados */}
         {elements.length > 0 && (
           <div className="bg-gray-900 rounded-2xl p-8 text-white">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center mb-6">
               <div>
                 <div className="text-3xl font-bold mb-1">{elements.length}</div>
                 <div className="text-gray-400">elementos</div>
@@ -280,12 +317,6 @@ const SteelWeightCalculator = () => {
               <div>
                 <div className="text-3xl font-bold mb-1">{totalWeight.toFixed(1)}</div>
                 <div className="text-gray-400">kg total</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold mb-1 text-green-400">
-                  ${totalCost.toLocaleString('es-MX')}
-                </div>
-                <div className="text-gray-400">costo estimado</div>
               </div>
             </div>
             
