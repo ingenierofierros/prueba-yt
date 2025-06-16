@@ -1,18 +1,26 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Download, Calculator } from 'lucide-react';
+import { Plus, X, Download, Calculator, PlusCircle } from 'lucide-react';
 
-interface Element {
+interface Component {
   id: number;
-  structuralElement: string;
   component: string;
+  customComponentName: string;
   profileType: string;
   size: string;
   length: number;
   quantity: number;
   weight: number;
   brand: string;
+}
+
+interface Element {
+  id: number;
+  structuralElement: string;
+  customElementName: string;
+  components: Component[];
+  totalWeight: number;
 }
 
 const SteelWeightCalculator = () => {
@@ -224,10 +232,10 @@ const SteelWeightCalculator = () => {
   };
 
   const addElement = () => {
-    const newElement: Element = {
-      id: Date.now(),
-      structuralElement: 'Columnas',
+    const newComponent: Component = {
+      id: Date.now() + Math.random(),
       component: 'Placa base',
+      customComponentName: '',
       profileType: 'Ángulo',
       size: '3/4 x 1/8 (19x3mm)',
       length: 1,
@@ -235,41 +243,126 @@ const SteelWeightCalculator = () => {
       weight: 0.88,
       brand: ''
     };
+
+    const newElement: Element = {
+      id: Date.now(),
+      structuralElement: 'Columnas',
+      customElementName: '',
+      components: [newComponent],
+      totalWeight: 0.88
+    };
+    
     setElements([...elements, newElement]);
   };
 
-  const updateElement = (id: number, field: keyof Element, value: any) => {
+  const addComponent = (elementId: number) => {
+    const newComponent: Component = {
+      id: Date.now() + Math.random(),
+      component: 'Placa base',
+      customComponentName: '',
+      profileType: 'Ángulo',
+      size: '3/4 x 1/8 (19x3mm)',
+      length: 1,
+      quantity: 1,
+      weight: 0.88,
+      brand: ''
+    };
+
     setElements(elements.map(element => {
-      if (element.id === id) {
+      if (element.id === elementId) {
+        const updatedComponents = [...element.components, newComponent];
+        const totalWeight = updatedComponents.reduce((sum, comp) => sum + comp.weight, 0);
+        return { ...element, components: updatedComponents, totalWeight };
+      }
+      return element;
+    }));
+  };
+
+  const updateElement = (elementId: number, field: keyof Element, value: any) => {
+    setElements(elements.map(element => {
+      if (element.id === elementId) {
         const updated = { ...element, [field]: value };
-        const profileWeight = profiles[updated.profileType][updated.size] || 0;
-        updated.weight = profileWeight * updated.length * updated.quantity;
+        if (field === 'structuralElement') {
+          // Si cambia el elemento estructural, actualizar el primer componente de todos los componentes
+          const firstComponent = structuralElements[value][0];
+          updated.components = updated.components.map(comp => ({
+            ...comp,
+            component: firstComponent
+          }));
+          // Recalcular pesos
+          updated.components = updated.components.map(comp => {
+            const profileWeight = profiles[comp.profileType][comp.size] || 0;
+            return { ...comp, weight: profileWeight * comp.length * comp.quantity };
+          });
+          updated.totalWeight = updated.components.reduce((sum, comp) => sum + comp.weight, 0);
+        }
         return updated;
       }
       return element;
     }));
   };
 
-  const removeElement = (id: number) => {
-    setElements(elements.filter(element => element.id !== id));
+  const updateComponent = (elementId: number, componentId: number, field: keyof Component, value: any) => {
+    setElements(elements.map(element => {
+      if (element.id === elementId) {
+        const updatedComponents = element.components.map(component => {
+          if (component.id === componentId) {
+            const updated = { ...component, [field]: value };
+            const profileWeight = profiles[updated.profileType][updated.size] || 0;
+            updated.weight = profileWeight * updated.length * updated.quantity;
+            return updated;
+          }
+          return component;
+        });
+        const totalWeight = updatedComponents.reduce((sum, comp) => sum + comp.weight, 0);
+        return { ...element, components: updatedComponents, totalWeight };
+      }
+      return element;
+    }));
+  };
+
+  const removeComponent = (elementId: number, componentId: number) => {
+    setElements(elements.map(element => {
+      if (element.id === elementId) {
+        const updatedComponents = element.components.filter(comp => comp.id !== componentId);
+        if (updatedComponents.length === 0) {
+          // Si no quedan componentes, remover el elemento completo
+          return null;
+        }
+        const totalWeight = updatedComponents.reduce((sum, comp) => sum + comp.weight, 0);
+        return { ...element, components: updatedComponents, totalWeight };
+      }
+      return element;
+    }).filter(Boolean) as Element[]);
+  };
+
+  const removeElement = (elementId: number) => {
+    setElements(elements.filter(element => element.id !== elementId));
   };
 
   useEffect(() => {
-    const total = elements.reduce((sum, element) => sum + element.weight, 0);
+    const total = elements.reduce((sum, element) => sum + element.totalWeight, 0);
     setTotalWeight(total);
   }, [elements]);
 
   const generateReport = () => {
     let report = "REPORTE ESTRUCTURA METÁLICA\n\n";
     
-    elements.forEach((element, index) => {
-      report += `${index + 1}. ${element.structuralElement} - ${element.component}\n`;
-      report += `   ${element.profileType} ${element.size} - ${element.length}m x${element.quantity} = ${element.weight.toFixed(1)}kg\n`;
-      if (element.brand) report += `   Marca: ${element.brand}\n`;
-      report += `\n`;
+    elements.forEach((element, elementIndex) => {
+      const elementName = element.customElementName || element.structuralElement;
+      report += `${elementIndex + 1}. ${elementName.toUpperCase()}\n`;
+      report += `   Peso total del elemento: ${element.totalWeight.toFixed(1)} kg\n\n`;
+      
+      element.components.forEach((component, compIndex) => {
+        const componentName = component.customComponentName || component.component;
+        report += `   ${elementIndex + 1}.${compIndex + 1} ${componentName}\n`;
+        report += `        ${component.profileType} ${component.size} - ${component.length}m x${component.quantity} = ${component.weight.toFixed(1)}kg\n`;
+        if (component.brand) report += `        Marca: ${component.brand}\n`;
+        report += `\n`;
+      });
     });
     
-    report += `\nTOTAL: ${totalWeight.toFixed(1)} kg\n`;
+    report += `\nTOTAL GENERAL: ${totalWeight.toFixed(1)} kg\n`;
     
     const blob = new Blob([report], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -280,9 +373,12 @@ const SteelWeightCalculator = () => {
     URL.revokeObjectURL(url);
   };
 
+  const totalElements = elements.length;
+  const totalComponents = elements.reduce((sum, element) => sum + element.components.length, 0);
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         
         {/* Header ultra minimalista */}
         <div className="text-center mb-12">
@@ -305,131 +401,183 @@ const SteelWeightCalculator = () => {
         </div>
 
         {/* Lista de elementos */}
-        <div className="space-y-4 mb-8">
+        <div className="space-y-6 mb-8">
           {elements.map((element) => (
             <div key={element.id} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                
+              
+              {/* Cabecera del elemento */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pb-4 border-b border-gray-200">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Elemento Estructural</label>
                   <select
                     value={element.structuralElement}
-                    onChange={(e) => {
-                      const newStructuralElement = e.target.value;
-                      const firstComponent = structuralElements[newStructuralElement][0];
-                      updateElement(element.id, 'structuralElement', newStructuralElement);
-                      updateElement(element.id, 'component', firstComponent);
-                    }}
+                    onChange={(e) => updateElement(element.id, 'structuralElement', e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
-                    {Object.keys(structuralElements).map(element => (
-                      <option key={element} value={element}>{element}</option>
+                    {Object.keys(structuralElements).map(structElement => (
+                      <option key={structElement} value={structElement}>{structElement}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Componente</label>
-                  <select
-                    value={element.component}
-                    onChange={(e) => updateElement(element.id, 'component', e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  >
-                    {structuralElements[element.structuralElement].map(component => (
-                      <option key={component} value={component}>{component}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
-                
-                <div className="col-span-2 md:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
-                  <select
-                    value={element.profileType}
-                    onChange={(e) => {
-                      const newType = e.target.value;
-                      const firstSize = Object.keys(profiles[newType])[0];
-                      updateElement(element.id, 'profileType', newType);
-                      updateElement(element.id, 'size', firstSize);
-                    }}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  >
-                    {Object.keys(profiles).map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="col-span-2 md:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
-                  <select
-                    value={element.size}
-                    onChange={(e) => updateElement(element.id, 'size', e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  >
-                    {Object.keys(profiles[element.profileType]).map(size => (
-                      <option key={size} value={size}>{size}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Pieza</label>
                   <input
                     type="text"
-                    value={element.brand}
-                    onChange={(e) => updateElement(element.id, 'brand', e.target.value)}
+                    value={element.customElementName}
+                    onChange={(e) => updateElement(element.id, 'customElementName', e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                    placeholder="Marca"
+                    placeholder="Nombre personalizado de la pieza"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={element.length}
-                      onChange={(e) => updateElement(element.id, 'length', parseFloat(e.target.value) || 0)}
-                      className="w-full px-3 py-2 pr-8 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                      step="0.1"
-                      min="0"
-                      placeholder="0"
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">m</span>
+                <div className="flex items-end justify-between">
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">Peso del elemento</div>
+                    <div className="text-xl font-bold text-gray-900">{element.totalWeight.toFixed(1)} kg</div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={element.quantity}
-                      onChange={(e) => updateElement(element.id, 'quantity', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 pr-8 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                      min="1"
-                      placeholder="1"
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">pz</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Peso</label>
-                  <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-center font-medium text-gray-900">
-                    {element.weight.toFixed(1)} kg
-                  </div>
-                </div>
-
-                <div className="flex justify-center items-end">
                   <button
                     onClick={() => removeElement(element.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-4"
                   >
                     <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Componentes del elemento */}
+              <div className="space-y-4">
+                {element.components.map((component, index) => (
+                  <div key={component.id} className="bg-white rounded-xl p-4 border border-gray-100">
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Componente</label>
+                        <select
+                          value={component.component}
+                          onChange={(e) => updateComponent(element.id, component.id, 'component', e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        >
+                          {structuralElements[element.structuralElement].map(comp => (
+                            <option key={comp} value={comp}>{comp}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Componente</label>
+                        <input
+                          type="text"
+                          value={component.customComponentName}
+                          onChange={(e) => updateComponent(element.id, component.id, 'customComponentName', e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                          placeholder="Nombre personalizado del componente"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
+                      
+                      <div className="col-span-2 md:col-span-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
+                        <select
+                          value={component.profileType}
+                          onChange={(e) => {
+                            const newType = e.target.value;
+                            const firstSize = Object.keys(profiles[newType])[0];
+                            updateComponent(element.id, component.id, 'profileType', newType);
+                            updateComponent(element.id, component.id, 'size', firstSize);
+                          }}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        >
+                          {Object.keys(profiles).map(type => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="col-span-2 md:col-span-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
+                        <select
+                          value={component.size}
+                          onChange={(e) => updateComponent(element.id, component.id, 'size', e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        >
+                          {Object.keys(profiles[component.profileType]).map(size => (
+                            <option key={size} value={size}>{size}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
+                        <input
+                          type="text"
+                          value={component.brand}
+                          onChange={(e) => updateComponent(element.id, component.id, 'brand', e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                          placeholder="Marca"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={component.length}
+                            onChange={(e) => updateComponent(element.id, component.id, 'length', parseFloat(e.target.value) || 0)}
+                            className="w-full px-3 py-2 pr-8 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                            step="0.1"
+                            min="0"
+                            placeholder="0"
+                          />
+                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">m</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={component.quantity}
+                            onChange={(e) => updateComponent(element.id, component.id, 'quantity', parseInt(e.target.value) || 0)}
+                            className="w-full px-3 py-2 pr-8 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                            min="1"
+                            placeholder="1"
+                          />
+                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">pz</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Peso</label>
+                        <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-center font-medium text-gray-900">
+                          {component.weight.toFixed(1)} kg
+                        </div>
+                      </div>
+
+                      <div className="flex justify-center items-end">
+                        <button
+                          onClick={() => removeComponent(element.id, component.id)}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Botón para agregar más componentes */}
+                <div className="text-center">
+                  <button
+                    onClick={() => addComponent(element.id)}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Agregar componente
                   </button>
                 </div>
               </div>
@@ -440,10 +588,14 @@ const SteelWeightCalculator = () => {
         {/* Resultados */}
         {elements.length > 0 && (
           <div className="bg-gray-900 rounded-2xl p-8 text-white">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center mb-6">
               <div>
-                <div className="text-3xl font-bold mb-1">{elements.length}</div>
+                <div className="text-3xl font-bold mb-1">{totalElements}</div>
                 <div className="text-gray-400">elementos</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold mb-1">{totalComponents}</div>
+                <div className="text-gray-400">componentes</div>
               </div>
               <div>
                 <div className="text-3xl font-bold mb-1">{totalWeight.toFixed(1)}</div>
