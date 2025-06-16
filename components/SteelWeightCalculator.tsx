@@ -5,6 +5,8 @@ import { Plus, X, Download, Calculator } from 'lucide-react';
 
 interface Element {
   id: number;
+  structuralElement: string;
+  component: string;
   profileType: string;
   size: string;
   length: number;
@@ -16,6 +18,90 @@ interface Element {
 const SteelWeightCalculator = () => {
   const [elements, setElements] = useState<Element[]>([]);
   const [totalWeight, setTotalWeight] = useState(0);
+
+  // Elementos estructurales y sus componentes
+  const structuralElements: Record<string, string[]> = {
+    'Columnas': [
+      'Placa base',
+      'Elemento principal',
+      'Conexión de viga',
+      'Conexión de marco',
+      'Conexión de cubierta',
+      'Rigidizadores',
+      'Cartelas'
+    ],
+    'Marcos': [
+      'Viga principal',
+      'Columna del marco',
+      'Conexión viga-columna',
+      'Cartelas de conexión',
+      'Rigidizadores de alma',
+      'Placas de continuidad',
+      'Elementos de arriostramiento'
+    ],
+    'Cubierta': [
+      'Viga principal',
+      'Viga secundaria (largueros)',
+      'Correas',
+      'Tirantes',
+      'Diagonales de cubierta',
+      'Conectores de lámina',
+      'Canalones',
+      'Elementos de fijación'
+    ],
+    'Muros': [
+      'Columnas de muro',
+      'Vigas de muro',
+      'Largueros horizontales',
+      'Largueros verticales',
+      'Diagonales de contraventeo',
+      'Marcos de puertas',
+      'Marcos de ventanas',
+      'Elementos de fijación'
+    ],
+    'Cimentación': [
+      'Dados de concreto',
+      'Anclas (pernos de anclaje)',
+      'Placas base',
+      'Plantillas de montaje',
+      'Contratrabes metálicas',
+      'Elementos de nivelación'
+    ],
+    'Arriostramiento': [
+      'Diagonales de fachada',
+      'Diagonales de cubierta',
+      'Contraventeos horizontales',
+      'Contraventeos verticales',
+      'Cables tensores',
+      'Elementos de conexión'
+    ],
+    'Escaleras y Plataformas': [
+      'Zancas',
+      'Peldaños',
+      'Barandales',
+      'Pasamanos',
+      'Plataformas',
+      'Soportes de plataforma',
+      'Escalones tipo rejilla'
+    ],
+    'Elementos Secundarios': [
+      'Bajadas pluviales',
+      'Canalones',
+      'Elementos de ventilación',
+      'Soportes de equipos',
+      'Ménsulas',
+      'Ganchos y elementos de izaje',
+      'Tapajuntas'
+    ],
+    'Puertas y Accesos': [
+      'Marco principal',
+      'Refuerzos de marco',
+      'Guías de puerta',
+      'Elementos de rodamiento',
+      'Topes y elementos de seguridad',
+      'Herrajes'
+    ]
+  };
 
   // Base de datos de perfiles estándar mexicanos (kg/m)
   const profiles: Record<string, Record<string, number>> = {
@@ -140,6 +226,8 @@ const SteelWeightCalculator = () => {
   const addElement = () => {
     const newElement: Element = {
       id: Date.now(),
+      structuralElement: 'Columnas',
+      component: 'Placa base',
       profileType: 'Ángulo',
       size: '3/4 x 1/8 (19x3mm)',
       length: 1,
@@ -175,7 +263,10 @@ const SteelWeightCalculator = () => {
     let report = "REPORTE ESTRUCTURA METÁLICA\n\n";
     
     elements.forEach((element, index) => {
-      report += `${index + 1}. ${element.profileType} ${element.size} - ${element.length}m x${element.quantity} = ${element.weight.toFixed(1)}kg\n`;
+      report += `${index + 1}. ${element.structuralElement} - ${element.component}\n`;
+      report += `   ${element.profileType} ${element.size} - ${element.length}m x${element.quantity} = ${element.weight.toFixed(1)}kg\n`;
+      if (element.brand) report += `   Marca: ${element.brand}\n`;
+      report += `\n`;
     });
     
     report += `\nTOTAL: ${totalWeight.toFixed(1)} kg\n`;
@@ -217,9 +308,44 @@ const SteelWeightCalculator = () => {
         <div className="space-y-4 mb-8">
           {elements.map((element) => (
             <div key={element.id} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Elemento Estructural</label>
+                  <select
+                    value={element.structuralElement}
+                    onChange={(e) => {
+                      const newStructuralElement = e.target.value;
+                      const firstComponent = structuralElements[newStructuralElement][0];
+                      updateElement(element.id, 'structuralElement', newStructuralElement);
+                      updateElement(element.id, 'component', firstComponent);
+                    }}
+                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  >
+                    {Object.keys(structuralElements).map(element => (
+                      <option key={element} value={element}>{element}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Componente</label>
+                  <select
+                    value={element.component}
+                    onChange={(e) => updateElement(element.id, 'component', e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  >
+                    {structuralElements[element.structuralElement].map(component => (
+                      <option key={component} value={component}>{component}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
                 
                 <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
                   <select
                     value={element.profileType}
                     onChange={(e) => {
@@ -237,6 +363,7 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
                   <select
                     value={element.size}
                     onChange={(e) => updateElement(element.id, 'size', e.target.value)}
@@ -249,6 +376,7 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
                   <input
                     type="text"
                     value={element.brand}
@@ -259,6 +387,7 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -274,6 +403,7 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -288,12 +418,13 @@ const SteelWeightCalculator = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Peso</label>
                   <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-center font-medium text-gray-900">
                     {element.weight.toFixed(1)} kg
                   </div>
                 </div>
 
-                <div className="flex justify-center">
+                <div className="flex justify-center items-end">
                   <button
                     onClick={() => removeElement(element.id)}
                     className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
