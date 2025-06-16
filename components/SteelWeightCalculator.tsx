@@ -232,15 +232,19 @@ const SteelWeightCalculator = () => {
   };
 
   const addElement = () => {
+    const defaultProfileType = 'IPR';
+    const defaultSize = Object.keys(profiles[defaultProfileType])[0];
+    const defaultWeight = profiles[defaultProfileType][defaultSize];
+
     const newComponent: Component = {
       id: Date.now() + Math.random(),
       component: 'Placa base',
       customComponentName: '',
-      profileType: 'Ángulo',
-      size: '3/4 x 1/8 (19x3mm)',
+      profileType: defaultProfileType,
+      size: defaultSize,
       length: 1,
       quantity: 1,
-      weight: 0.88,
+      weight: defaultWeight,
       brand: ''
     };
 
@@ -249,22 +253,26 @@ const SteelWeightCalculator = () => {
       structuralElement: 'Columnas',
       customElementName: '',
       components: [newComponent],
-      totalWeight: 0.88
+      totalWeight: defaultWeight
     };
     
     setElements([...elements, newElement]);
   };
 
   const addComponent = (elementId: number) => {
+    const defaultProfileType = 'IPR';
+    const defaultSize = Object.keys(profiles[defaultProfileType])[0];
+    const defaultWeight = profiles[defaultProfileType][defaultSize];
+
     const newComponent: Component = {
       id: Date.now() + Math.random(),
       component: 'Placa base',
       customComponentName: '',
-      profileType: 'Ángulo',
-      size: '3/4 x 1/8 (19x3mm)',
+      profileType: defaultProfileType,
+      size: defaultSize,
       length: 1,
       quantity: 1,
-      weight: 0.88,
+      weight: defaultWeight,
       brand: ''
     };
 
@@ -308,6 +316,13 @@ const SteelWeightCalculator = () => {
         const updatedComponents = element.components.map(component => {
           if (component.id === componentId) {
             const updated = { ...component, [field]: value };
+            
+            // Si cambió el tipo de perfil, actualizar también el tamaño al primer disponible
+            if (field === 'profileType') {
+              const firstSize = Object.keys(profiles[value])[0];
+              updated.size = firstSize;
+            }
+            
             const profileWeight = profiles[updated.profileType][updated.size] || 0;
             updated.weight = profileWeight * updated.length * updated.quantity;
             return updated;
@@ -482,12 +497,7 @@ const SteelWeightCalculator = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
                         <select
                           value={component.profileType}
-                          onChange={(e) => {
-                            const newType = e.target.value;
-                            const firstSize = Object.keys(profiles[newType])[0];
-                            updateComponent(element.id, component.id, 'profileType', newType);
-                            updateComponent(element.id, component.id, 'size', firstSize);
-                          }}
+                          onChange={(e) => updateComponent(element.id, component.id, 'profileType', e.target.value)}
                           className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                         >
                           {Object.keys(profiles).map(type => (
@@ -503,7 +513,7 @@ const SteelWeightCalculator = () => {
                           onChange={(e) => updateComponent(element.id, component.id, 'size', e.target.value)}
                           className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                         >
-                          {Object.keys(profiles[component.profileType]).map(size => (
+                          {Object.keys(profiles[component.profileType] || {}).map(size => (
                             <option key={size} value={size}>{size}</option>
                           ))}
                         </select>
@@ -585,6 +595,19 @@ const SteelWeightCalculator = () => {
           ))}
         </div>
 
+        {/* Botón adicional para agregar elemento en la parte inferior */}
+        {elements.length > 0 && (
+          <div className="text-center mb-8">
+            <button 
+              onClick={addElement}
+              className="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Agregar elemento
+            </button>
+          </div>
+        )}
+
         {/* Resultados */}
         {elements.length > 0 && (
           <div className="bg-gray-900 rounded-2xl p-8 text-white">
@@ -599,7 +622,7 @@ const SteelWeightCalculator = () => {
               </div>
               <div>
                 <div className="text-3xl font-bold mb-1">{totalWeight.toFixed(1)}</div>
-                <div className="text-gray-400">kg total</div>
+                <div className="text-gray-400">kg totales</div>
               </div>
             </div>
             
@@ -621,8 +644,8 @@ const SteelWeightCalculator = () => {
             <div className="w-16 h-16 bg-gray-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
               <Calculator className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Comienza tu cálculo</h3>
-            <p className="text-gray-500 mb-6">Agrega elementos metálicos para calcular el peso total</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Sin elementos estructurales</h3>
+            <p className="text-gray-500 mb-6">Agrega tu primer elemento para comenzar el cálculo</p>
             <button 
               onClick={addElement}
               className="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
@@ -632,10 +655,9 @@ const SteelWeightCalculator = () => {
             </button>
           </div>
         )}
-
       </div>
     </div>
   );
 };
 
-export default SteelWeightCalculator;
+export default SteelWeightCalculator;                                                            
